@@ -1,12 +1,13 @@
 import { Menu, shopiMenuOperation } from "./types"
 import { getMenuQuery } from "@/lib/shopify/queries/menu";
-import { TAGS } from "../constants";
+import { TAGS,SHOPIFY_GRAPHQL_API_ENDPOINT } from "../constants";
+import { isShopifyError } from "@/lib/type-guard";
 import { ensureStartWith } from "@/lib/utils";
 const domain = process.env.SHOPIFY_STORE_DOMAIN
     ? ensureStartWith(process.env.SHOPIFY_STORE_DOMAIN, "https://")
     : "";
 const endpoint = `${domain}${SHOPIFY_GRAPHQL_API_ENDPOINT}`;
-const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+const key = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 type ExtractVariables<T> = T extends { variables: object }
     ? T["variables"]
     : never;
@@ -16,19 +17,19 @@ export async function shopifyFetch<T>({
     query,
     tags,
     variables,
-}:{
+}: {
     cache?: RequestCache;
     headers?: HeadersInit;
     query: string;
     tags?: string[];
-    variables?: ExtractVariables<T>
-}):Promise<{status:number; body:T} | never> {
+    variables?: ExtractVariables<T>;
+}): Promise<{ status: number; body: T } | never> {
     try {
-        const result =await fetch(endpoint,{
+        const result = await fetch(endpoint, {
             method: "POST",
-            headers:{
-                "content-Type":"application/json",
-                "X-Shopify-Storefront-Access-Token": storefrontAccessToken,
+            headers: {
+                "Content-Type": "application/json",
+                "X-Shopify-Storefront-Access-Token": key,
                 ...headers,
             },
             body: JSON.stringify({
@@ -38,48 +39,50 @@ export async function shopifyFetch<T>({
             cache,
             ...(tags && { next: { tags } }),
         });
+
         const body = await result.json();
-        if (body.errors){
+
+        if (body.errors) {
             throw body.errors[0];
         }
+
         return {
             status: result.status,
             body,
         };
     } catch (error) {
-        if (isShopifyError(error)){
-            throw{
-                cause: error.cause?.toString() || "undefined",
+        if (isShopifyError(error)) {
+            throw {
+                cause: error.cause?.toString() || "unknown",
                 status: error.status || 500,
                 message: error.message,
                 query,
             };
         }
-        throw{
+
+        throw {
             error,
             query,
         };
-        
     }
-
 }
 
 export async function getMenu(handle: string): Promise<Menu[]> {
-    const res = await shopifyFetch<shopiMenuOperation>({
+    const res = await shopifyFetch<ShopifyMenuOperation>({
         query: getMenuQuery,
         tags: [TAGS.collections],
         variables: {
             handle,
         },
+    });
 
-    })
     return (
-        res.body?.data?.menu?.item.map((item: {
-            title: string,
-            url: string
-        }) => ({
+        res.body?.data?.menu?.items.map((item: { title: string; url: string }) => ({
             title: item.title,
-            path: item.url.replace(domain, "").replace("/collections/", "/search").replace("/pages", ''),
+            path: item.url
+                .replace(domain, "")
+                .replace("/collections", "/search")
+                .replace("/pages", ""),
         })) || []
-    )
-};
+    );
+}

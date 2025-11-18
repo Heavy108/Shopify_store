@@ -3,13 +3,13 @@ export type Menu = {
     path: string;
 }
 
-export type shopiMenuOperation = {
+export type ShopifyMenuOperation = {
     data:{
         menu: {
             item: {
                 title: string;
                 url: string;
-            };
+            }[];
         };
     };
     variables: {
