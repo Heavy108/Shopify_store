@@ -86,3 +86,7 @@ export async function getMenu(handle: string): Promise<Menu[]> {
         })) || []
     );
 }
+
+export async function getProducts({query ,reverse ,sortKey}:{query?:string; reverse?: boolean; sortKey?:string;}):Promise<Product[]>{
+    
+}
