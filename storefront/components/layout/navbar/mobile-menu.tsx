@@ -1,12 +1,7 @@
 "use client";
 
 import { Menu } from "@/lib/shopify/types";
-import {
-  Dialog,
-  Transition,
-  TransitionChild,
-  DialogPanel,
-} from "@headlessui/react";
+import { Dialog, Transition } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { Fragment, useState } from "react";
@@ -14,56 +9,52 @@ import Search from "./search";
 
 export default function MobileMenu({ menu }: { menu: Menu[] }) {
   const [isOpen, setIsOpen] = useState(false);
-  const toggle = () => setIsOpen((s) => !s);
+  const openMobileMenu = () => setIsOpen(true);
   const closeMobileMenu = () => setIsOpen(false);
-
   return (
     <>
-      {/* SINGLE TOGGLE BUTTON - fixed & high z so it remains interactable above everything */}
       <button
-        onClick={toggle}
-        aria-label={isOpen ? "Close mobile menu" : "Open mobile menu"}
-        className="fixed top-4 left-4 z-[9999] flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 bg-white text-black transition-colors md:hidden dark:border-neutral-700 dark:bg-black dark:text-white"
+        onClick={openMobileMenu}
+        aria-label="Open mobile menu"
+        className="flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors md:hidden dark:border-neutral-700 dark:text-white"
       >
-        {isOpen ? <XMarkIcon className="h-5" /> : <Bars3Icon className="h-5" />}
+        <Bars3Icon className="h-4" />
       </button>
 
-      <Transition show={isOpen} as={Fragment}>
-        {/* Dialog is full-screen; z lower than the toggle button so the toggle remains visible and clickable */}
-        <Dialog onClose={closeMobileMenu} className="fixed inset-0 z-50">
-          <TransitionChild
+      <Transition show={isOpen}>
+        <Dialog onClose={closeMobileMenu} className="relative z-50">
+          <Transition.Child
             as={Fragment}
-            enter="transition-opacity ease-in-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="transition-opacity ease-in-out duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
+            enter="transition-all ease-in-out duration-300"
+            enterFrom="opacity-0 backdrop-blur-none"
+            enterTo="opacity-100 backdrop-blur-[.5px]"
+            leave="transition-all ease-in-out duration-200"
+            leaveFrom="opacity-100 backdrop-blur-[.5px]"
+            leaveTo="opacity-0 backdrop-blur-none"
           >
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-black/30 backdrop-blur-[.5px]"
-              aria-hidden="true"
-            />
-          </TransitionChild>
-
-          <TransitionChild
+            <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+          </Transition.Child>
+          <Transition.Child
             as={Fragment}
-            enter="transition-transform ease-in-out duration-300"
-            enterFrom="-translate-x-full"
+            enter="transition-all ease-in-out duration-300"
+            enterFrom="translate-x-[-100%]"
             enterTo="translate-x-0"
-            leave="transition-transform ease-in-out duration-200"
+            leave="transition-all ease-in-out duration-200"
             leaveFrom="translate-x-0"
-            leaveTo="-translate-x-full"
+            leaveTo="translate-x-[-100%]"
           >
-            <DialogPanel className="fixed inset-0 pt-16 left-0 right-0 flex h-full w-full flex-col bg-white pb-6 dark:bg-black">
+            <Dialog.Panel className="fixed bottom-0 left-0 right-0 top-0 flex h-full w-full flex-col bg-white pb-6 dark:bg-black">
               <div className="p-4">
-                {/* optional: you can keep this internal close button if you want an additional visible target inside the panel;
-                    removed here to honor the "single-button" requirement. */}
+                <button
+                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors dark:border-neutral-700 dark:text-white"
+                  onClick={closeMobileMenu}
+                  aria-label="Close mobile menu"
+                >
+                  <XMarkIcon className="h-6" />
+                </button>
                 <div className="mb-4 w-full">
                   <Search />
                 </div>
-
                 {menu.length > 0 ? (
                   <ul className="flex w-full flex-col">
                     {menu.map((item: Menu) => (
@@ -83,8 +74,8 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                   </ul>
                 ) : null}
               </div>
-            </DialogPanel>
-          </TransitionChild>
+            </Dialog.Panel>
+          </Transition.Child>
         </Dialog>
       </Transition>
     </>
