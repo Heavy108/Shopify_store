@@ -6,7 +6,7 @@ export type Menu = {
 export type ShopifyMenuOperation = {
     data:{
         menu: {
-            item: {
+            items: {
                 title: string;
                 url: string;
             }[];

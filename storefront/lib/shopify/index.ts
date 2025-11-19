@@ -1,4 +1,4 @@
-import { Menu, shopiMenuOperation } from "./types"
+import { Menu, ShopifyMenuOperation } from "./types"
 import { getMenuQuery } from "@/lib/shopify/queries/menu";
 import { TAGS,SHOPIFY_GRAPHQL_API_ENDPOINT } from "../constants";
 import { isShopifyError } from "@/lib/type-guard";
