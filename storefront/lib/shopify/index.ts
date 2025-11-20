@@ -1,4 +1,28 @@
-import { Menu, ShopifyMenuOperation } from "./types"
+import {
+    Cart,
+    Collection,
+    Connection,
+    Image,
+    Menu,
+    Page,
+    Product,
+    ShopifyAddToCartOperation,
+    ShopifyCart,
+    ShopifyCartOperation,
+    ShopifyCollection,
+    ShopifyCollectionProductsOperation,
+    ShopifyCollectionsOperation,
+    ShopifyCreateCartOperation,
+    ShopifyMenuOperation,
+    ShopifyPageOperation,
+    ShopifyPagesOperation,
+    ShopifyProduct,
+    ShopifyProductOperation,
+    ShopifyProductRecommendationsOperation,
+    ShopifyProductsOperation,
+    ShopifyRemoveFromCartOperation,
+    ShopifyUpdateCartOperation,
+} from "./types";
 import { getMenuQuery } from "@/lib/shopify/queries/menu";
 import { TAGS,SHOPIFY_GRAPHQL_API_ENDPOINT } from "../constants";
 import { isShopifyError } from "@/lib/type-guard";
@@ -88,5 +112,12 @@ export async function getMenu(handle: string): Promise<Menu[]> {
 }
 
 export async function getProducts({query ,reverse ,sortKey}:{query?:string; reverse?: boolean; sortKey?:string;}):Promise<Product[]>{
-    
+    const res = await shopifyFetch<ShopifyProductsOperation>({
+        query :getProductsQuery,
+        tags:[TAGS.products],
+        variables:{
+            query,
+            reverse,
+            sortKey,
+    })
 }
