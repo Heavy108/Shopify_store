@@ -24,7 +24,8 @@ import {
     ShopifyUpdateCartOperation,
 } from "./types";
 import { getMenuQuery } from "@/lib/shopify/queries/menu";
-import { TAGS,SHOPIFY_GRAPHQL_API_ENDPOINT } from "../constants";
+import { getProductQuery } from "./queries/products";
+import { TAGS,SHOPIFY_GRAPHQL_API_ENDPOINT, HIDDEN_PRODUCT_TAG } from "../constants";
 import { isShopifyError } from "@/lib/type-guard";
 import { ensureStartWith } from "@/lib/utils";
 const domain = process.env.SHOPIFY_STORE_DOMAIN
@@ -91,6 +92,59 @@ export async function shopifyFetch<T>({
     }
 }
 
+function removeEdgesAndNodes<T>(array: Connection<T>): T[] {
+    return array.edges.map((edge) => edge?.node);
+}
+
+function reshapeImages(images: Connection<Image>, productTitle: string) {
+    const flattened = removeEdgesAndNodes(images);
+
+    return flattened.map((image) => {
+        const filename = image.url.match(/.*\/(.*)\..*/)?.[1];
+
+        return {
+            ...image,
+            altText: image.altText || `${productTitle} - ${filename}`,
+        };
+    });
+}
+function reshapeProduct(
+    product: ShopifyProduct,
+    filterHiddenProducts: boolean = true
+) {
+    if (
+        !product ||
+        (filterHiddenProducts && product.tags.includes(HIDDEN_PRODUCT_TAG))
+    ) {
+        return undefined;
+    }
+
+    const { images, variants, ...rest } = product;
+
+    return {
+        ...rest,
+        images: reshapeImages(images, product.title),
+        variants: removeEdgesAndNodes(variants),
+    };
+}
+function reshapeProducts(products: ShopifyProduct[]) {
+    const reshapedProducts = [];
+
+    for (const product of products) {
+        if (product) {
+            const reshapedProduct = reshapeProduct(product);
+
+            if (reshapedProduct) {
+                reshapedProducts.push(reshapedProduct);
+            }
+        }
+    }
+
+    return reshapedProducts;
+}
+
+
+
 export async function getMenu(handle: string): Promise<Menu[]> {
     const res = await shopifyFetch<ShopifyMenuOperation>({
         query: getMenuQuery,
@@ -111,13 +165,24 @@ export async function getMenu(handle: string): Promise<Menu[]> {
     );
 }
 
-export async function getProducts({query ,reverse ,sortKey}:{query?:string; reverse?: boolean; sortKey?:string;}):Promise<Product[]>{
+export async function getProducts({
+    query,
+    reverse,
+    sortKey,
+}: {
+    query?: string;
+    reverse?: boolean;
+    sortKey?: string;
+}): Promise<Product[]> {
     const res = await shopifyFetch<ShopifyProductsOperation>({
-        query :getProductsQuery,
-        tags:[TAGS.products],
-        variables:{
+        query: getProductQuery,
+        tags: [TAGS.products],
+        variables: {
             query,
             reverse,
             sortKey,
-    })
+        },
+    });
+
+    return reshapeProducts(removeEdgesAndNodes(res.body.data.products));
 }
