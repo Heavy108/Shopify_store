@@ -8,16 +8,33 @@ export const metadata = {
   description: "Search for products in the store.",
 };
 
+type SearchParamsType = {
+  q?: string;
+  sort?: string;
+};
+
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<SearchParamsType>;
 }) {
-  const { sort, q: searchValue } = searchParams as { [key: string]: string };
+  
+  const params = await searchParams;
+
+  const searchValue = params.q || "";
+  const sort = params.sort || defaultSort.slug;
+
   const { sortKey, reverse } =
     sorting.find((item) => item.slug === sort) || defaultSort;
-  const products = await getProducts({ sortKey, reverse, query: searchValue });
+
+  // Avoid calling Shopify with empty search queries
+  const products =
+    searchValue.length > 0
+      ? await getProducts({ sortKey, reverse, query: searchValue })
+      : [];
+
   const resultsText = products.length > 1 ? "results" : "result";
+
   return (
     <>
       {searchValue ? (
@@ -28,6 +45,7 @@ export default async function SearchPage({
           <span>&quot;{searchValue}&quot;</span>
         </p>
       ) : null}
+
       {products.length > 0 ? (
         <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <ProductGridItems products={products} />
