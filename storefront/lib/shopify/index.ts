@@ -268,3 +268,28 @@ export async function getCollectionProducts({
         removeEdgesAndNodes(res.body.data.collection.products)
     );
 }
+
+export async function getProduct(handle: string): Promise<Product | undefined> {
+    const res = await shopifyFetch<ShopifyProductOperation>({
+        query: getProductQuery,
+        tags: [TAGS.products],
+        variables: {
+            handle,
+        },
+    });
+    return reshapeProduct(res.body.data.product, false);
+}
+
+// export async function getProductRecommendations(
+//     productId: string
+// ): Promise<Product[]> {
+//     const res = await shopifyFetch<ShopifyProductRecommendationsOperation>({
+//         query: getProductRecommendationsQuery,
+//         tags: [TAGS.products],
+//         variables: {
+//             productId,
+//         },
+//     });
+
+//     return reshapeProducts(res.body.data.productRecommendations);
+// }
