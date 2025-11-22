@@ -1,13 +1,13 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { ListItem, type PathFilterItem as PathFilterItemT } from ".";
+import { ListItem, type PathFilterItem } from ".";
 import Link from "next/link";
 import { createUrl } from "@/lib/utils";
 import type { SortFilterItem } from "@/lib/constants";
 import clsx from "clsx";
 
-function PathFilterItem({ item }: { item: PathFilterItemT }) {
+function PathFilterItem({ item }: { item: PathFilterItem }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const active = pathname === item.path;
@@ -15,6 +15,10 @@ function PathFilterItem({ item }: { item: PathFilterItemT }) {
   const DynamicTag = active ? "p" : Link;
 
   newParams.delete("q");
+
+  // console.log("item.path", item.path);
+  // console.log(item)
+  // console.log("createUrl(item.path, newParams)", createUrl(item.path, newParams));
 
   return (
     <li className="mt-2 flex text-black dark:text-white" key={item.title}>

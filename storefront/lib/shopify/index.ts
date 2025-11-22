@@ -24,8 +24,8 @@ import {
     ShopifyUpdateCartOperation,
 } from "./types";
 import { getMenuQuery } from "@/lib/shopify/queries/menu";
-import { getProductQuery } from "./queries/products";
-import { getCollectionsQuery } from "./queries/collection";
+import { getProductQuery, getProductsQuery } from "./queries/products";
+import { getCollectionsQuery ,getCollectionProductsQuery } from "./queries/collection";
 import { TAGS,SHOPIFY_GRAPHQL_API_ENDPOINT, HIDDEN_PRODUCT_TAG } from "../constants";
 import { isShopifyError } from "@/lib/type-guard";
 import { ensureStartWith } from "@/lib/utils";
@@ -144,26 +144,30 @@ function reshapeProducts(products: ShopifyProduct[]) {
     return reshapedProducts;
 }
 
-function reshapeCollection(collection:ShopifyCollection): Collection | undefined {
+function reshapeCollection(
+    collection: ShopifyCollection
+): Collection | undefined {
     if (!collection) return undefined;
 
     return {
         ...collection,
-        path: `/collections/${collection.handle}`,
-    }
+        path: `/search/${collection.handle}`,
+    };
 }
 
-function reshapeCollections(collections:ShopifyCollection[]){
+function reshapeCollections(collections: ShopifyCollection[]) {
     const reshapedCollections = [];
-    for(const collection of collections){
-        if (collection){
-            const reshapedCollection = reshapeCollection(collection)
 
-            if (reshapedCollection){
+    for (const collection of collections) {
+        if (collection) {
+            const reshapedCollection = reshapeCollection(collection);
+
+            if (reshapedCollection) {
                 reshapedCollections.push(reshapedCollection);
             }
         }
     }
+
     return reshapedCollections;
 }
 
@@ -197,7 +201,7 @@ export async function getProducts({
     sortKey?: string;
 }): Promise<Product[]> {
     const res = await shopifyFetch<ShopifyProductsOperation>({
-        query: getProductQuery,
+        query: getProductsQuery,
         tags: [TAGS.products],
         variables: {
             query,
@@ -218,7 +222,7 @@ export async function getCollections(): Promise<Collection[]>{
     const shopifyCollections = removeEdgesAndNodes(res.body?.data?.collections);
     const collections = [
         {
-            handle: " ",
+            handle: "",
             title: "All",
             description:"All products",
             seo:{
@@ -232,6 +236,35 @@ export async function getCollections(): Promise<Collection[]>{
         //filter out hidden products
         ...reshapeCollections(shopifyCollections.filter((collection) => !collection.handle.startsWith("hidden")))
     ]
-
+// console.log("collections",collections);
     return collections;
+}
+
+export async function getCollectionProducts({
+    collection,
+    reverse,
+    sortKey,
+}: {
+    collection: string;
+    reverse?: boolean;
+    sortKey?: string;
+}): Promise<Product[]> {
+    const res = await shopifyFetch<ShopifyCollectionProductsOperation>({
+        query: getCollectionProductsQuery,
+        tags: [TAGS.collections, TAGS.products],
+        variables: {
+            handle: collection,
+            reverse,
+            sortKey: sortKey === "CREATED_AT" ? "CREATED" : sortKey,
+        },
+    });
+
+    if (!res.body.data.collection) {
+        console.log(`No collection found for \`${collection}\``);
+        return [];
+    }
+
+    return reshapeProducts(
+        removeEdgesAndNodes(res.body.data.collection.products)
+    );
 }
