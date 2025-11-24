@@ -3,10 +3,12 @@
 import { Product, ProductVariant } from "@/lib/shopify/types";
 import { useProduct } from "../product/product-context";
 import { useCart } from "./cart-context";
-import { useFormState } from "react-dom";
+// import { useFormState } from "react-dom";
+
+import { useActionState } from "react";
 import clsx from "clsx";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import { addItem } from "./actions";
+import { addItem } from "./action";
 
 function SubmitButton({
   availableForSale,
@@ -61,7 +63,7 @@ export function AddToCart({ product }: { product: Product }) {
   const { variants, availableForSale } = product;
   const { addCartItem } = useCart();
   const { state } = useProduct();
-  const [message, formAction] = useFormState(addItem, null);
+  const [message, formAction] = useActionState(addItem, null);
   const variant = variants.find((variant: ProductVariant) =>
     variant.selectedOptions.every(
       (option) => option.value === state[option.name.toLowerCase()]
